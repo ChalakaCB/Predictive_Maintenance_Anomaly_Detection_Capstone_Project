@@ -13,9 +13,9 @@ Windows, macOS, or Linux):
 
 ~~~text
 repository-root/
-├── src/etl/MetroPT3_ETL.py
-├── notebooks/01_MetroPT3_ETL.ipynb
-├── docs/MetroPT3_ETL_Documentations.md
+├── src/ETL.py
+├── notebooks/01_ETL.ipynb
+├── docs/ETL_Documentations.md
 ├── data/raw/MetroPT3(AirCompressor).csv       # local-only download
 └── data/processed/                            # generated local outputs
 ~~~
@@ -24,7 +24,7 @@ The Python script is the reproducible source for regenerating the train/test
 files. Run it **from the repository root** with repository-relative paths:
 
 ~~~bash
-python src/etl/MetroPT3_ETL.py --input "data/raw/MetroPT3(AirCompressor).csv" --output-dir "data/processed" --horizons 5 10 20 30
+python src/ETL.py --input "data/raw/MetroPT3(AirCompressor).csv" --output-dir "data/processed" --horizons 5 10 20 30
 ~~~
 
 If a machine exposes the interpreter as `python3` instead of `python`, use
@@ -261,7 +261,7 @@ Then open a terminal at the **repository root** and run the same portable
 command on every operating system:
 
 ~~~bash
-python src/etl/MetroPT3_ETL.py --input "data/raw/MetroPT3(AirCompressor).csv" --output-dir "data/processed" --horizons 5 10 20 30
+python src/ETL.py --input "data/raw/MetroPT3(AirCompressor).csv" --output-dir "data/processed" --horizons 5 10 20 30
 ~~~
 
 On macOS/Linux, use `python3` if `python` is not the Python 3 interpreter.

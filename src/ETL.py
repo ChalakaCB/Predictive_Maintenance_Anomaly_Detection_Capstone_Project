@@ -1,17 +1,18 @@
 """Build the MetroPT-3 ETL dataset used by the modelling notebooks.
 
-The notebook (``MetroPT3_ETL.ipynb``) is intentionally explanatory.  This
+The notebook (``notebooks/01_ETL.ipynb``) is intentionally explanatory.  This
 script contains the same ETL as a repeatable local command: it reads the raw
 MetroPT-3 CSV, adds the documented failure metadata, creates the 5/10/20/30
 minute warning labels, creates the notebook's adaptive statistical diagnostics,
 performs the chronological F4 hold-out split, and writes train/test CSV files.
 
-Example
--------
-    python MetroPT3_ETL.py
+Example (run from the repository root)
+---------------------------------------
+    python src/ETL.py --input "data/raw/MetroPT3(AirCompressor).csv" --output-dir "data/processed"
 
-The defaults are relative to this file, so the command can be run directly
-from ``D:\\pump\\metropt+3+dataset`` without Google Drive or Colab.
+The default paths point to the repository's local ``data/raw`` and
+``data/processed`` folders. The raw CSV is intentionally not committed; each
+teammate downloads it into their own checkout.
 """
 
 from __future__ import annotations
@@ -266,18 +267,19 @@ def split_and_save(
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     script_dir = Path(__file__).resolve().parent
+    repository_root = script_dir.parent if script_dir.name == "src" else script_dir
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--input",
         dest="input_path",
         type=Path,
-        default=script_dir / "MetroPT3(AirCompressor).csv",
+        default=repository_root / "data" / "raw" / "MetroPT3(AirCompressor).csv",
         help="Path to the raw MetroPT-3 CSV.",
     )
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=script_dir / "ETL_OUTPUT Dataset",
+        default=repository_root / "data" / "processed",
         help="Directory for metropt3_train.csv and metropt3_test.csv.",
     )
     parser.add_argument(

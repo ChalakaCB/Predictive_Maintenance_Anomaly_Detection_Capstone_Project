@@ -1,0 +1,46 @@
+# Python bytecode and local environments
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+
+# Test, type-checking, and lint caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Jupyter-generated files
+.ipynb_checkpoints/
+
+# Local datasets and generated ETL outputs
+data/raw/
+data/processed/
+ETL_OUTPUT Dataset/
+*.zip
+*.parquet
+*.feather
+
+# Generated model artifacts (use Git LFS or a model registry if sharing them)
+models/*.joblib
+models/*.pkl
+models/*.pickle
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Operating-system and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log

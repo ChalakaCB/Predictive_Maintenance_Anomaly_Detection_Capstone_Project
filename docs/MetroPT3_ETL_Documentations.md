@@ -2,23 +2,35 @@
 
 This document describes the current, reproducible ETL for the MetroPT-3 air-compressor dataset. It is written for the next feature-engineering and modelling stages, so it records both what was generated and what must **not** be treated as ground truth.
 
-## Current files
+## Current files and portable layout
 
-The folder contains three complementary artifacts:
+The repository contains the code and documentation. Each teammate keeps a
+local copy of the raw dataset; the raw CSV and generated outputs should not be
+committed to GitHub.
 
-| File | Purpose |
-|---|---|
-| MetroPT3(AirCompressor).csv | Original downloaded sensor data. |
-| MetroPT3_ETL.ipynb | Explanatory notebook: each transformation and exploratory check is visible cell by cell. |
-| MetroPT3_ETL.py | Repeatable local version of the ETL. It does not require Colab or Google Drive. |
+Recommended layout inside any local checkout (the checkout can be anywhere on
+Windows, macOS, or Linux):
 
-The Python script is the reproducible source for regenerating the two files in ETL_OUTPUT Dataset. From this folder run:
-
-~~~powershell
-python MetroPT3_ETL.py
+~~~text
+repository-root/
+├── src/etl/MetroPT3_ETL.py
+├── notebooks/01_MetroPT3_ETL.ipynb
+├── docs/MetroPT3_ETL_Documentations.md
+├── data/raw/MetroPT3(AirCompressor).csv       # local-only download
+└── data/processed/                            # generated local outputs
 ~~~
 
-The default input and output paths are relative to the script. The existing CSVs in ETL_OUTPUT Dataset may have been generated before the 5/10/20-minute labels were added; rerunning the script refreshes them with all four horizons.
+The Python script is the reproducible source for regenerating the train/test
+files. Run it **from the repository root** with repository-relative paths:
+
+~~~bash
+python src/etl/MetroPT3_ETL.py --input "data/raw/MetroPT3(AirCompressor).csv" --output-dir "data/processed" --horizons 5 10 20 30
+~~~
+
+If a machine exposes the interpreter as `python3` instead of `python`, use
+`python3` in the same command. No drive letter or user-specific directory is
+part of the command. Every teammate only needs to place the downloaded raw CSV
+at `data/raw/MetroPT3(AirCompressor).csv` in their own checkout.
 
 ---
 
@@ -238,18 +250,26 @@ The clean experimental design is to keep the same features and temporal split wh
 
 ## 10. Re-running the ETL
 
-Default run:
+First create the local data folders in the checkout and place the downloaded
+CSV at:
 
-~~~powershell
-cd D:\pump\metropt+3+dataset
-python MetroPT3_ETL.py
+~~~text
+data/raw/MetroPT3(AirCompressor).csv
 ~~~
 
-Custom paths or horizons:
+Then open a terminal at the **repository root** and run the same portable
+command on every operating system:
 
-~~~powershell
-python MetroPT3_ETL.py --input "D:\pump\metropt+3+dataset\MetroPT3(AirCompressor).csv" --output-dir "D:\pump\metropt+3+dataset\ETL_OUTPUT Dataset" --horizons 5 10 20 30
+~~~bash
+python src/etl/MetroPT3_ETL.py --input "data/raw/MetroPT3(AirCompressor).csv" --output-dir "data/processed" --horizons 5 10 20 30
 ~~~
 
-The command writes metropt3_train.csv and metropt3_test.csv to the selected output directory and prints the quality checks, label counts, failure allocation, and output shapes. The notebook remains useful for explanation and visual exploration; the script is the repeatable local build used to regenerate the handoff files.
+On macOS/Linux, use `python3` if `python` is not the Python 3 interpreter.
+The command writes `metropt3_train.csv` and `metropt3_test.csv` under
+`data/processed/` and prints the quality checks, label counts, failure
+allocation, and output shapes. The exact checkout location is intentionally
+left to each teammate; only the repository-relative paths above are shared.
 
+The notebook remains useful for explanation and visual exploration; the script
+is the repeatable local build used to regenerate the handoff files. Do not use
+`git add .` until the data folders are covered by the project's `.gitignore`.

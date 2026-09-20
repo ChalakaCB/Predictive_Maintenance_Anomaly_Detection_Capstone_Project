@@ -5,8 +5,7 @@ Inputs: data/processed/horizon_label_<N>min/{train,val,test}.csv
 Outputs: docs/results/*.csv and src/models/*.joblib
 
 Parameters and thresholds are selected on validation F1. The selected model
-is saved without refitting on validation data. Metrics describe the existing
-full-pool-SMOTE/random-split protocol, not unseen-event forecasting performance.
+is saved without refitting on validation data. 
 """
 
 import json
@@ -186,6 +185,10 @@ def main():
                 "fit_split": "train", "threshold_source": "val",
                 "data_protocol": DATA_PROTOCOL, "label_definition": LABEL_DEFINITION,
                 "random_state": RANDOM_STATE, "versions": versions,
+                "class_counts": {
+                    split: {"positive": int(y.sum()), "negative": int(len(y) - y.sum())}
+                    for split, y in (("train", y_train), ("val", y_val), ("test", y_test))
+                },
                 "val_metrics": best["metrics"], "test_metrics": test_metrics,
             }
             joblib.dump(artifact, model_path, compress=3)
@@ -195,8 +198,8 @@ def main():
                 "threshold": best["threshold"], **test_metrics,
             })
             # Write after each combination so completed work is visible during a run.
-            pd.DataFrame(comparisons).to_csv(RESULTS_DIR / "model_comparison.csv", index=False)
-            pd.DataFrame(trials).to_csv(RESULTS_DIR / "tuning_trials.csv", index=False)
+            pd.DataFrame(comparisons).to_csv(RESULTS_DIR / "ml_model_comparison.csv", index=False)
+            pd.DataFrame(trials).to_csv(RESULTS_DIR / "ml_tuning_trials.csv", index=False)
             print(
                 f"    test precision={test_metrics['precision']:.4f}, "
                 f"recall={test_metrics['recall']:.4f}, F1={test_metrics['f1']:.4f}; "

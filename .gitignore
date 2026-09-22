@@ -32,6 +32,8 @@ ETL_OUTPUT Dataset/
 models/*.joblib
 models/*.pkl
 models/*.pickle
+src/models/*.joblib
+src/models/**/*.pt
 
 # Local configuration and secrets
 .env

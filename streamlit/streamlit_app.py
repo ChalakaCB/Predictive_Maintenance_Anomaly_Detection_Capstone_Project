@@ -1846,43 +1846,79 @@ physical damage.
     )
 
 
-    # ========================================================
-    # RISK HISTORY
-    # ========================================================
+# ========================================================
+# PREDICTED FAILURE RISK TREND
+# ========================================================
 
-    st.subheader(
-        "Pump Condition Trend"
+st.subheader("Predicted Failure Risk Over Time")
+
+history = pd.DataFrame(session.history)
+
+if not history.empty:
+
+    risk_history = history.copy().tail(150)
+
+    risk_history["timestamp"] = pd.to_datetime(
+        risk_history["timestamp"],
+        errors="coerce",
     )
 
-    history = pd.DataFrame(
-        session.history
-    )
+    risk_history["Risk Score"] = risk_history["risk_score"]
 
-    if not history.empty:
-
-        chart_data = (
-            history[
-                [
-                    "row_index",
-                    "risk_score",
-                ]
+    chart_data = (
+        risk_history[
+            [
+                "timestamp",
+                "Risk Score",
             ]
-            .copy()
-            .tail(150)
-            .set_index(
-                "row_index"
-            )
+        ]
+        .dropna(subset=["timestamp"])
+        .set_index("timestamp")
+    )
+
+    st.line_chart(
+        chart_data,
+        width="stretch",
+        height=320,
+        y_label="Risk score",
+        x_label="Simulated sensor time",
+    )
+
+    latest_risk = float(
+        risk_history["risk_score"].iloc[-1]
+    )
+
+    if latest_risk >= 0.85:
+        risk_message = (
+            "Very high predicted failure risk. "
+            "The current score is in the ALERT range."
+        )
+    elif latest_risk >= 0.60:
+        risk_message = (
+            "High predicted failure risk. "
+            "The current score is in the WARNING range."
+        )
+    elif latest_risk >= 0.30:
+        risk_message = (
+            "Elevated predicted failure risk. "
+            "The current score is in the WATCH range."
+        )
+    else:
+        risk_message = (
+            "Low predicted failure risk. "
+            "The current score is in the NORMAL range."
         )
 
-        st.line_chart(
-            chart_data,
-            width="stretch",
-        )
+    st.caption(
+        "This chart shows how the model's estimated failure risk "
+        f"changes over time for the selected "
+        f"{st.session_state.active_horizon_min}-minute prediction horizon. "
+        "Risk scores range from 0 to 1."
+    )
 
-        st.caption(
-            "Recent model-estimated condition trend. "
-            "Higher values indicate higher estimated risk."
-        )
+    st.info(
+        f"Current interpretation: {risk_message}"
+    )
 
 
     # ========================================================

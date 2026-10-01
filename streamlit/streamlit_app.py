@@ -377,8 +377,8 @@ def get_model_display_name(
 # SIDEBAR
 # ============================================================
 
-st.sidebar.header(
-    "Controls"
+st.sidebar.markdown(
+    "## Control Panel"
 )
 
 
@@ -390,7 +390,9 @@ controls_locked = (
 # ============================================================
 # MODE
 # ============================================================
-
+st.sidebar.caption(
+    "DATA & MODEL"
+)
 mode = st.sidebar.radio(
     "Mode",
     [
@@ -520,6 +522,9 @@ selected_model_id = st.sidebar.selectbox(
 # ============================================================
 # REPLAY SPEED
 # ============================================================
+st.sidebar.caption(
+    "REPLAY SETTINGS"
+)
 
 speed_label = st.sidebar.selectbox(
     "Replay Speed",
@@ -538,9 +543,11 @@ speed = SPEED_OPTIONS[
 # ============================================================
 # BUFFER SIZE
 # ============================================================
-
+st.sidebar.caption(
+    "RUN CONTROL"
+)
 window_size = st.sidebar.slider(
-    "Rolling Buffer",
+    "Rolling Buffer Size",
     min_value=360,
     max_value=600,
     value=400,
@@ -1674,62 +1681,91 @@ def replay_tick():
 
 
     # ========================================================
-    # WARM-UP DISPLAY
+    # COMPACT WARM-UP DISPLAY
     # ========================================================
 
     if not session.buffer.is_full():
 
-        status_col, alert_col = (
-            st.columns(
-                [2, 1]
-            )
+        buffer_count = len(session.buffer.as_list())
+        buffer_target = st.session_state.active_window_size
+
+        buffer_progress = (
+            buffer_count / buffer_target
+            if buffer_target > 0
+            else 0
         )
 
-        with status_col:
+        buffer_progress = min(
+            max(buffer_progress, 0),
+            1,
+        )
 
-            st.subheader(
-                "Replay Status"
-            )
+        st.html(
+            f"""
+<div style="
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    border-radius:12px;
+    padding:12px 16px;
+    margin-top:6px;
+    margin-bottom:6px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+">
 
-            st.progress(
-                progress
-            )
+    <div>
+        <div style="
+            font-size:12px;
+            color:#64748b;
+            margin-bottom:3px;
+        ">
+            Monitoring Status
+        </div>
 
-            st.info(
-                "Preparing monitoring — "
-                "collecting initial sensor history."
-            )
+        <div style="
+            font-size:20px;
+            font-weight:750;
+            color:#475569;
+        ">
+            ● PREPARING
+        </div>
+    </div>
 
-            st.caption(
-                f"{processed:,} / "
-                f"{total:,} observations processed. "
-                "Predictions begin when enough history "
-                "is available."
-            )
+    <div style="
+        text-align:right;
+    ">
+        <div style="
+            font-size:12px;
+            color:#64748b;
+        ">
+            Building rolling sensor history
+        </div>
 
+        <div style="
+            font-size:15px;
+            font-weight:650;
+            color:#0f172a;
+            margin-top:2px;
+        ">
+            {buffer_count:,} / {buffer_target:,} observations
+        </div>
+    </div>
 
-        with alert_col:
+</div>
+"""
+        )
 
-            st.markdown(
-                """
-                <div style="
-                    padding: 18px;
-                    border-radius: 10px;
-                    text-align: center;
-                    background-color: #808080;
-                    color: white;
-                    font-size: 22px;
-                    font-weight: bold;
-                ">
-                    PREPARING
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+        st.progress(buffer_progress)
+
+        st.caption(
+            f"{processed:,}/{total:,} replay observations processed"
+            f"  •  Predictions start automatically when the buffer is ready"
+        )
 
         return
-
-
     # ========================================================
     # USE PERSISTED LATEST PREDICTION
     # ========================================================
@@ -1949,41 +1985,81 @@ def replay_tick():
     )
 
     # ========================================================
-    # RISK EXPLANATION
+    # COMPACT MODEL ESTIMATE
     # ========================================================
 
-    st.info(
-        f"""
-**Current model estimate**
+    estimate_col1, estimate_col2 = st.columns(
+        [2.2, 1],
+        gap="small",
+    )
 
-The model currently estimates a risk score of
-**{prediction['risk_score']:.3f}**.
+    with estimate_col1:
+        st.html(
+            f"""
+<div style="
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    border-radius:10px;
+    padding:10px 14px;
+">
+    <div style="
+        font-size:12px;
+        color:#64748b;
+        margin-bottom:3px;
+    ">
+        Current Model Estimate
+    </div>
 
-For the selected **{st.session_state.active_horizon_min}-minute
-horizon**, this represents the model's estimated likelihood
-of the target abnormal/failure condition within that horizon.
-
-This score is a model output, not a direct measurement of
-physical damage.
+    <div style="
+        font-size:14px;
+        color:#0f172a;
+        line-height:1.4;
+    ">
+        Risk score <b>{prediction['risk_score']:.3f}</b>
+        for the next
+        <b>{st.session_state.active_horizon_min} minutes</b>.
+        This is a model estimate, not a direct measurement of physical damage.
+    </div>
+</div>
 """
-    )
+        )
 
+    with estimate_col2:
+        st.html(
+            f"""
+<div style="
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    border-radius:10px;
+    padding:10px 14px;
+">
+    <div style="
+        font-size:12px;
+        color:#64748b;
+        margin-bottom:3px;
+    ">
+        Simulated Sensor Time
+    </div>
 
-    # ========================================================
-    # SIMULATED TIME
-    # ========================================================
-
-    st.write(
-        f"**Simulated sensor time:** "
-        f"{prediction['timestamp']}"
-    )
-
+    <div style="
+        font-size:14px;
+        font-weight:650;
+        color:#0f172a;
+    ">
+        {prediction['timestamp']}
+    </div>
+</div>
+"""
+        )
     # ========================================================
     # ========================================================
     # PREDICTED FAILURE RISK TREND
     # ========================================================
 
-    st.subheader("Predicted Failure Risk Over Time")
+
+    st.markdown(
+        "### 📈 Predicted Failure Risk Over Time"
+    )
 
     history = pd.DataFrame(session.history)
 
@@ -2097,7 +2173,7 @@ physical damage.
             risk_line
             + threshold_lines
         ).properties(
-            height=350
+            height=300
         )
 
         st.altair_chart(
@@ -2138,126 +2214,92 @@ physical damage.
             )
 
         st.caption(
-            "Risk score is shown on a fixed 0–100% scale. "
-            "Dashboard alert thresholds are "
-            "WATCH 30% • WARNING 60% • ALERT 85%."
+            f"{risk_message}  •  "
+            "WATCH 30%  •  WARNING 60%  •  ALERT 85%"
         )
-
-        st.info(
-            f"Current interpretation: {risk_message}"
-        )
-
+   
     # ========================================================
-    # CURRENT SENSOR READING
-    # ========================================================
-
-    if latest_row is not None:
-
-        st.subheader(
-            "Current Sensor Reading"
-        )
-
-        st.caption(
-            "Latest historical sensor observation "
-            "being replayed."
-        )
-
-        current_row_df = pd.DataFrame(
-            [latest_row]
-        )
-
-        st.dataframe(
-            current_row_df,
-            width="stretch",
-            hide_index=True,
-        )
-
-
-    # ========================================================
-    # TECHNICAL DETAILS
+    # SENSOR + TECHNICAL DETAILS
     # ========================================================
 
     with st.expander(
-        "Technical prediction details"
+        "Sensor & technical details",
+        expanded=False,
     ):
+
+        if latest_row is not None:
+
+            st.markdown(
+                "**Current Sensor Reading**"
+            )
+
+            current_row_df = pd.DataFrame(
+                [latest_row]
+            )
+
+            st.dataframe(
+                current_row_df,
+                width="stretch",
+                hide_index=True,
+            )
+
+        st.markdown(
+            "**Prediction Details**"
+        )
 
         st.write(
             {
-                "Model ID": prediction[
-                    "model_id"
-                ],
-
-                "Model name": (
-                    get_model_display_name(
-                        prediction[
-                            "model_id"
-                        ]
-                    )
+                "Model ID": prediction["model_id"],
+                "Model name": get_model_display_name(
+                    prediction["model_id"]
                 ),
-
                 "Prediction horizon": (
                     f"{st.session_state.active_horizon_min} minutes"
                 ),
-
                 "Risk score": round(
-                    prediction[
-                        "risk_score"
-                    ],
+                    prediction["risk_score"],
                     6,
                 ),
-
-                "Alert level": prediction[
-                    "alert_level"
-                ],
-
-                "Replay row": prediction[
-                    "row_index"
-                ],
-
-                "Timestamp": prediction[
-                    "timestamp"
-                ],
+                "Alert level": prediction["alert_level"],
+                "Replay row": prediction["row_index"],
+                "Timestamp": prediction["timestamp"],
             }
         )
+
 
 
     # ========================================================
     # CURRENT RUN ALERT HISTORY
     # ========================================================
 
-    current_run = (
-        st.session_state.active_run
-    )
+    current_run = st.session_state.active_run
 
     if current_run is not None:
 
-        st.subheader(
-            f"Current Run #{current_run['run']} — Alert History"
-        )
+        alert_count = len(st.session_state.event_log)
 
-        if st.session_state.event_log:
+        with st.expander(
+            f"🔔 Recent Alerts ({alert_count})",
+            expanded=False,
+        ):
 
-            st.caption(
-                "Alert-level transitions recorded during this run."
-            )
+            if st.session_state.event_log:
 
-            event_df = pd.DataFrame(
-                st.session_state.event_log
-            )
+                event_df = pd.DataFrame(
+                    st.session_state.event_log
+                )
 
-            st.dataframe(
-                event_df.tail(20),
-                width="stretch",
-                hide_index=True,
-            )
+                st.dataframe(
+                    event_df.tail(10),
+                    width="stretch",
+                    hide_index=True,
+                )
 
-        else:
+            else:
 
-            st.info(
-                "No alert-level changes recorded "
-                "during this run yet."
-            )
-
+                st.caption(
+                    "No alert-level changes recorded during this run."
+                )
 
 # ============================================================
 # RUN THE REPLAY FRAGMENT
@@ -2270,41 +2312,47 @@ if st.session_state.is_replaying:
 
 # ============================================================
 # POST-REPLAY CURRENT RUN ALERT HISTORY
-#
-# This remains visible after the fragment stops.
 # ============================================================
 
 if (
     not st.session_state.is_replaying
-    and
-    st.session_state.active_run
-    is not None
+    and st.session_state.active_run is not None
 ):
 
-    current_run = (
-        st.session_state.active_run
+    current_run = st.session_state.active_run
+
+    current_events = current_run.get(
+        "alert_events",
+        []
     )
 
-    current_events = (
-        current_run.get(
-            "alert_events",
-            []
-        )
+    st.markdown(
+        f"### 🔔 Alert Status Changes — Run #{current_run['run']}"
     )
 
-    st.subheader(
-        f"Current Run #{current_run['run']} — Alert History"
+    st.caption(
+        "Shows each time the model moved from one alert level to another during the replay."
     )
 
     if current_events:
 
-        st.caption(
-            "Alert-level transitions recorded during this run."
-        )
-
         current_event_df = pd.DataFrame(
             current_events
         )
+
+        current_event_df = current_event_df.rename(
+            columns={
+                "row": "Replay Row",
+                "timestamp": "Time",
+                "from": "Previous Status",
+                "to": "New Status",
+                "risk_score": "Risk Score",
+            }
+        )
+
+        current_event_df["Risk Score"] = (
+            current_event_df["Risk Score"] * 100
+        ).round(1).astype(str) + "%"
 
         st.dataframe(
             current_event_df.tail(20),
@@ -2314,249 +2362,95 @@ if (
 
     else:
 
-        st.info(
+        st.caption(
             "No alert-level changes occurred during this run."
-        )
-
-
-# ============================================================
-# NON-REPLAY INFORMATION
+        )# ============================================================
+# READY STATE
 # ============================================================
 
 if not st.session_state.is_replaying:
 
     if (
-        st.session_state.active_run
-        is None
-        and
-        st.session_state.rows
-        is None
+        st.session_state.active_run is None
+        and st.session_state.rows is None
     ):
 
-        st.info(
-            "Choose a dataset mode, prediction horizon "
-            "and trained model from the sidebar, then "
-            "press **Start** to begin the historical replay."
+        st.html(
+            """
+<div style="
+    border:1px solid #dbeafe;
+    background:#f8fbff;
+    border-radius:10px;
+    padding:10px 14px;
+    margin-top:6px;
+    font-size:13px;
+    color:#475569;
+">
+
+    <span style="
+        color:#2563eb;
+        font-weight:700;
+    ">
+        ● Ready
+    </span>
+
+    &nbsp; Select your dataset, prediction horizon and model,
+    then press <b>Start</b> to begin the replay.
+
+</div>
+"""
         )
-
-
 # ============================================================
 # PREVIOUS RUNS
 # ============================================================
 
 if st.session_state.run_history:
 
-    st.subheader(
-        "Previous Runs"
-    )
-
-    history_display = []
-
-    for run in (
-        st.session_state.run_history
-    ):
-
-        alert_events = run.get(
-            "alert_events",
-            []
-        )
-
-        change_count = len(
-            alert_events
-        )
-
-        if change_count == 0:
-
-            status_changes = (
-                "No changes"
-            )
-
-        elif change_count == 1:
-
-            status_changes = (
-                "1 change"
-            )
-
-        else:
-
-            status_changes = (
-                f"{change_count} changes"
-            )
-
-
-        history_display.append(
-            {
-                "Run": run.get(
-                    "run"
-                ),
-
-                "Started": run.get(
-                    "started"
-                ),
-
-                "Mode": run.get(
-                    "mode"
-                ),
-
-                "Model": run.get(
-                    "model"
-                ),
-
-                "Horizon": (
-                    f"{run.get('horizon')} min"
-                    if run.get(
-                        "horizon"
-                    )
-                    is not None
-                    else "-"
-                ),
-
-                "Speed": run.get(
-                    "speed"
-                ),
-
-                "Status": run.get(
-                    "status"
-                ),
-
-                "Status Changes": (
-                    status_changes
-                ),
-
-                "Observations": run.get(
-                    "observations",
-                    0,
-                ),
-
-                "Predictions": run.get(
-                    "predictions",
-                    0,
-                ),
-            }
-        )
-
-
-    # --------------------------------------------------------
-    # Previous Runs Summary Table
-    # --------------------------------------------------------
-
-    st.dataframe(
-        pd.DataFrame(
-            history_display
-        ),
-        width="stretch",
-        hide_index=True,
-    )
-
-
-    # --------------------------------------------------------
-    # Run Detail Selector
-    # --------------------------------------------------------
-
-    st.subheader(
-        "View Run Details"
-    )
-
-    run_options = {}
-
-    for run in (
-        st.session_state.run_history
-    ):
-
-        alert_events = run.get(
-            "alert_events",
-            []
-        )
-
-        change_count = len(
-            alert_events
-        )
-
-        if change_count == 0:
-
-            change_text = (
-                "No changes"
-            )
-
-        elif change_count == 1:
-
-            change_text = (
-                "1 change"
-            )
-
-        else:
-
-            change_text = (
-                f"{change_count} changes"
-            )
-
-        label = (
-            f"Run #{run.get('run')} "
-            f"— {change_text} "
-            f"— {run.get('status')}"
-        )
-
-        run_options[label] = run
-
-
-    selected_run_label = st.selectbox(
-        "Select a previous run",
-        options=list(
-            run_options.keys()
-        ),
-    )
-
-    selected_run = run_options[
-        selected_run_label
-    ]
-
-
-    # --------------------------------------------------------
-    # Selected Run Status Changes
-    # --------------------------------------------------------
-
-    selected_events = (
-        selected_run.get(
-            "alert_events",
-            []
-        )
-    )
-
     with st.expander(
-        f"Status Change Details — "
-        f"Run #{selected_run.get('run')}",
-        expanded=True,
+        f"🕘 Run History ({len(st.session_state.run_history)})",
+        expanded=False,
     ):
 
-        if selected_events:
+        history_display = []
 
-            st.caption(
-                "Alert-level transitions recorded during this run."
+        for run in st.session_state.run_history:
+
+            alert_events = run.get(
+                "alert_events",
+                []
             )
 
-            selected_event_df = pd.DataFrame(
-                selected_events
+            history_display.append(
+                {
+                    "Run": run.get("run"),
+                    "Started": run.get("started"),
+                    "Model": run.get("model"),
+                    "Horizon": (
+                        f"{run.get('horizon')} min"
+                        if run.get("horizon") is not None
+                        else "-"
+                    ),
+                    "Speed": run.get("speed"),
+                    "Status": run.get("status"),
+                    "Alerts": len(alert_events),
+                    "Predictions": run.get(
+                        "predictions",
+                        0,
+                    ),
+                }
             )
 
-            st.dataframe(
-                selected_event_df,
-                width="stretch",
-                hide_index=True,
-            )
-
-        else:
-
-            st.info(
-                "No alert-level changes occurred during this run."
-            )
-
-
+        st.dataframe(
+            pd.DataFrame(history_display),
+            width="stretch",
+            hide_index=True,
+        )
 # ============================================================
 # SYSTEM LOG — SIDEBAR DIAGNOSTICS
 # ============================================================
 
-with st.sidebar.expander(
-    "Diagnostics / System Log",
+with st.expander(
+    f"🧾 System Log ({len(st.session_state.system_log)})",
     expanded=False,
 ):
 
@@ -2567,12 +2461,16 @@ with st.sidebar.expander(
         )
 
         st.dataframe(
-            system_df.tail(50),
+            system_df.tail(20),
             width="stretch",
             hide_index=True,
         )
 
     else:
+
+        st.caption(
+            "No system messages recorded."
+        )
 
         st.caption(
             "No system messages recorded."

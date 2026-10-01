@@ -1114,39 +1114,55 @@ if (
         st.session_state.active_run
     )
 
-    st.subheader(
-        f"Current Run #{active_run['run']}"
-    )
+    st.markdown("### Live Monitoring Session")
 
-    run_col1, run_col2, run_col3, run_col4, run_col5 = (
-        st.columns(5)
-    )
+    run_col1, run_col2, run_col3, run_col4 = st.columns(4)
 
-    run_col1.metric(
-        "Model",
-        active_run["model"],
-    )
+    with run_col1:
+        st.metric(
+            "Selected Model",
+            active_run["model"],
+            help="The trained model currently being used for failure-risk prediction.",
+        )
 
-    run_col2.metric(
-        "Horizon",
-        f"{active_run['horizon']} min",
-    )
+    with run_col2:
+        st.metric(
+            "Prediction Horizon",
+            f"{active_run['horizon']} min",
+            help="How far ahead the model is attempting to predict a failure.",
+        )
 
-    run_col3.metric(
-        "Mode",
-        active_run["mode"],
-    )
+    with run_col3:
+        st.metric(
+            "Replay Speed",
+            active_run["speed"],
+            help="Controls how quickly the historical sensor data is replayed.",
+        )
 
-    run_col4.metric(
-        "Speed",
-        active_run["speed"],
-    )
+    with run_col4:
+        run_status = active_run["status"]
 
-    run_col5.metric(
-        "Status",
-        active_run["status"],
-    )
+        if run_status == "RUNNING":
+            status_icon = "🟢"
+        elif run_status == "COMPLETED":
+            status_icon = "✅"
+        elif run_status == "STOPPED":
+            status_icon = "⏸️"
+        elif run_status == "ERROR":
+            status_icon = "🔴"
+        else:
+            status_icon = "⚪"
 
+        st.metric(
+            "Session Status",
+            f"{status_icon} {run_status}",
+        )
+
+    st.caption(
+        f"Run #{active_run['run']} • "
+        f"{active_run['mode']} • "
+        f"Dataset: {active_run['dataset']}"
+    )
 
 # ============================================================
 # LIVE REPLAY FRAGMENT

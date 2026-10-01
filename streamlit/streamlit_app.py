@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 from pathlib import Path
 from datetime import datetime
 import time
@@ -1050,18 +1051,51 @@ if start_clicked:
             f"Start error: {exc}"
         )
 
-
 # ============================================================
 # PAGE HEADER
 # ============================================================
 
-st.title(
-    "Pump Predictive Maintenance — Live Replay"
-)
+st.html(
+    """
+<div style="
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:4px;
+">
+    <div>
+        <div style="
+            font-size:28px;
+            font-weight:750;
+            line-height:1.15;
+            color:#0f172a;
+        ">
+            Pump Predictive Maintenance
+        </div>
 
-st.caption(
-    "Historical sensor data is replayed sequentially "
-    "to simulate a real-time predictive-maintenance system."
+        <div style="
+            font-size:13px;
+            color:#64748b;
+            margin-top:4px;
+        ">
+            Historical sensor replay for real-time failure-risk monitoring
+        </div>
+    </div>
+
+    <div style="
+        background:#ecfdf5;
+        color:#047857;
+        border:1px solid #a7f3d0;
+        border-radius:999px;
+        padding:6px 11px;
+        font-size:12px;
+        font-weight:700;
+        white-space:nowrap;
+    ">
+        ● MONITORING SYSTEM
+    </div>
+</div>
+"""
 )
 
 
@@ -1070,113 +1104,138 @@ st.caption(
 # ============================================================
 
 with st.expander(
-    "How this dashboard works",
+    "ⓘ How this dashboard works",
     expanded=False,
 ):
 
     st.markdown(
         """
-### What you are seeing
+The dashboard replays historical MetroPT3 sensor data to simulate real-time monitoring.
 
-The dashboard replays historical pump sensor observations
-sequentially to simulate a real-time monitoring system.
+**Pipeline:** Sensor reading → rolling buffer → feature pipeline → model prediction → alert level
 
-For each observation:
+**Risk levels:**  
+🟢 NORMAL — low risk  
+🟡 WATCH — elevated risk  
+🟠 WARNING — high risk  
+🔴 ALERT — very high risk
 
-1. The sensor reading enters the rolling buffer.
-2. The trained feature pipeline processes the available history.
-3. The selected model estimates the current risk.
-4. The risk is converted into a dashboard alert level.
-5. The result is added to the current run.
-
-### Risk score
-
-The risk score ranges from **0 to 1**.
-
-A higher value means the trained model estimates a higher
-likelihood of the target abnormal/failure condition within
-the selected prediction horizon.
-
-The risk score is **not a measurement of physical damage**.
-
-### Alert levels
-
-- **NORMAL** — low model risk
-- **WATCH** — elevated risk
-- **WARNING** — high model risk
-- **ALERT** — very high model risk
-
-### Historical replay
-
-This is a simulation using historical data rather than a
-live sensor connection.
+*The risk score is a model prediction, not a direct measurement of physical damage.*
 """
     )
 
+#     st.markdown(
+#         """
+# ### What you are seeing
+
+# The dashboard replays historical pump sensor observations
+# sequentially to simulate a real-time monitoring system.
+
+# For each observation:
+
+# 1. The sensor reading enters the rolling buffer.
+# 2. The trained feature pipeline processes the available history.
+# 3. The selected model estimates the current risk.
+# 4. The risk is converted into a dashboard alert level.
+# 5. The result is added to the current run.
+
+# ### Risk score
+
+# The risk score ranges from **0 to 1**.
+
+# A higher value means the trained model estimates a higher
+# likelihood of the target abnormal/failure condition within
+# the selected prediction horizon.
+
+# The risk score is **not a measurement of physical damage**.
+
+# ### Alert levels
+
+# - **NORMAL** — low model risk
+# - **WATCH** — elevated risk
+# - **WARNING** — high model risk
+# - **ALERT** — very high model risk
+
+# ### Historical replay
+
+# This is a simulation using historical data rather than a
+# live sensor connection.
+# """
+#     )
+
 
 # ============================================================
-# STATIC CURRENT RUN INFORMATION
+# COMPACT CURRENT RUN INFORMATION
 # ============================================================
 
-if (
-    st.session_state.active_run
-    is not None
-):
+if st.session_state.active_run is not None:
 
-    active_run = (
-        st.session_state.active_run
+    active_run = st.session_state.active_run
+
+    run_status = active_run["status"]
+
+    if run_status == "RUNNING":
+        status_icon = "●"
+        status_color = "#16a34a"
+    elif run_status == "COMPLETED":
+        status_icon = "✓"
+        status_color = "#2563eb"
+    elif run_status == "STOPPED":
+        status_icon = "●"
+        status_color = "#d97706"
+    elif run_status == "ERROR":
+        status_icon = "●"
+        status_color = "#dc2626"
+    else:
+        status_icon = "●"
+        status_color = "#64748b"
+
+    st.html(
+        f"""
+<div style="
+    margin-top:6px;
+    margin-bottom:8px;
+    padding:8px 12px;
+    border:1px solid #e2e8f0;
+    border-radius:10px;
+    background:#f8fafc;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+    font-size:12px;
+    color:#475569;
+">
+
+    <div>
+        <b style="color:#0f172a;">
+            Run #{active_run['run']}
+        </b>
+        &nbsp;•&nbsp;
+        {active_run['dataset']}
+        &nbsp;•&nbsp;
+        {active_run['mode']}
+    </div>
+
+    <div>
+        <b>{active_run['model']}</b>
+        &nbsp;•&nbsp;
+        {active_run['horizon']} min
+        &nbsp;•&nbsp;
+        {active_run['speed']}
+        &nbsp;•&nbsp;
+        <span style="
+            color:{status_color};
+            font-weight:700;
+        ">
+            {status_icon} {run_status}
+        </span>
+    </div>
+
+</div>
+"""
     )
-
-    st.markdown("### Live Monitoring Session")
-
-    run_col1, run_col2, run_col3, run_col4 = st.columns(4)
-
-    with run_col1:
-        st.metric(
-            "Selected Model",
-            active_run["model"],
-            help="The trained model currently being used for failure-risk prediction.",
-        )
-
-    with run_col2:
-        st.metric(
-            "Prediction Horizon",
-            f"{active_run['horizon']} min",
-            help="How far ahead the model is attempting to predict a failure.",
-        )
-
-    with run_col3:
-        st.metric(
-            "Replay Speed",
-            active_run["speed"],
-            help="Controls how quickly the historical sensor data is replayed.",
-        )
-
-    with run_col4:
-        run_status = active_run["status"]
-
-        if run_status == "RUNNING":
-            status_icon = "🟢"
-        elif run_status == "COMPLETED":
-            status_icon = "✅"
-        elif run_status == "STOPPED":
-            status_icon = "⏸️"
-        elif run_status == "ERROR":
-            status_icon = "🔴"
-        else:
-            status_icon = "⚪"
-
-        st.metric(
-            "Session Status",
-            f"{status_icon} {run_status}",
-        )
-
-    st.caption(
-        f"Run #{active_run['run']} • "
-        f"{active_run['mode']} • "
-        f"Dataset: {active_run['dataset']}"
-    )
-
 # ============================================================
 # LIVE REPLAY FRAGMENT
 # ============================================================
@@ -1761,130 +1820,132 @@ def replay_tick():
         },
     )
 
-    overview_col1, overview_col2, overview_col3, overview_col4 = st.columns(4)
+   
+
+    overview_col1, overview_col2, overview_col3, overview_col4 = st.columns(
+        4,
+        gap="small",
+    )
 
     with overview_col1:
         st.html(
             f"""
-            <div style="
-                background:{status_style['bg']};
-                border:1px solid {status_style['border']};
-                border-radius:14px;
-                padding:18px;
-                min-height:120px;
-            ">
-                <div style="
-                    font-size:13px;
-                    color:#64748b;
-                    margin-bottom:10px;
-                ">
-                    Machine Status
-                </div>
+<div style="
+    background:{status_style['bg']};
+    border:1px solid {status_style['border']};
+    border-radius:12px;
+    padding:12px 16px;
+">
+    <div style="
+        font-size:12px;
+        color:#64748b;
+        margin-bottom:5px;
+    ">
+        Machine Status
+    </div>
 
-                <div style="
-                    font-size:28px;
-                    font-weight:700;
-                    color:{status_style['text']};
-                ">
-                    {status_style['icon']} {alert_level}
-                </div>
-            </div>
-            """
+    <div style="
+        font-size:22px;
+        font-weight:750;
+        color:{status_style['text']};
+    ">
+        {status_style['icon']} {alert_level}
+    </div>
+</div>
+"""
         )
 
     with overview_col2:
         st.html(
             f"""
-            <div style="
-                background:#f8fafc;
-                border:1px solid #dbeafe;
-                border-radius:14px;
-                padding:18px;
-                min-height:120px;
-            ">
-                <div style="
-                    font-size:13px;
-                    color:#64748b;
-                    margin-bottom:10px;
-                ">
-                    Failure Risk
-                </div>
+<div style="
+    background:#f8fbff;
+    border:1px solid #dbeafe;
+    border-radius:12px;
+    padding:12px 16px;
+">
+    <div style="
+        font-size:12px;
+        color:#64748b;
+        margin-bottom:5px;
+    ">
+        Failure Risk
+    </div>
 
-                <div style="
-                    font-size:28px;
-                    font-weight:700;
-                    color:#1e3a8a;
-                ">
-                    {current_risk * 100:.1f}%
-                </div>
-            </div>
-            """
+    <div style="
+        font-size:22px;
+        font-weight:750;
+        color:#2563eb;
+    ">
+        {current_risk * 100:.1f}%
+    </div>
+</div>
+"""
         )
 
     with overview_col3:
         st.html(
             f"""
-            <div style="
-                background:#f8fafc;
-                border:1px solid #e2e8f0;
-                border-radius:14px;
-                padding:18px;
-                min-height:120px;
-            ">
-                <div style="
-                    font-size:13px;
-                    color:#64748b;
-                    margin-bottom:10px;
-                ">
-                    Prediction Window
-                </div>
+<div style="
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    border-radius:12px;
+    padding:12px 16px;
+">
+    <div style="
+        font-size:12px;
+        color:#64748b;
+        margin-bottom:5px;
+    ">
+        Prediction Window
+    </div>
 
-                <div style="
-                    font-size:28px;
-                    font-weight:700;
-                    color:#0f172a;
-                ">
-                    {st.session_state.active_horizon_min} min
-                </div>
-            </div>
-            """
+    <div style="
+        font-size:22px;
+        font-weight:750;
+        color:#0f172a;
+    ">
+        {st.session_state.active_horizon_min} min
+    </div>
+</div>
+"""
         )
 
     with overview_col4:
         st.html(
             f"""
-            <div style="
-                background:#f8fafc;
-                border:1px solid #e2e8f0;
-                border-radius:14px;
-                padding:18px;
-                min-height:120px;
-            ">
-                <div style="
-                    font-size:13px;
-                    color:#64748b;
-                    margin-bottom:10px;
-                ">
-                    Replay Progress
-                </div>
+<div style="
+    background:#faf8ff;
+    border:1px solid #e9d5ff;
+    border-radius:12px;
+    padding:12px 16px;
+">
+    <div style="
+        font-size:12px;
+        color:#64748b;
+        margin-bottom:5px;
+    ">
+        Replay Progress
+    </div>
 
-                <div style="
-                    font-size:28px;
-                    font-weight:700;
-                    color:#0f172a;
-                ">
-                    {progress * 100:.0f}%
-                </div>
-            </div>
-            """
+    <div style="
+        font-size:22px;
+        font-weight:750;
+        color:#6d28d9;
+    ">
+        {progress * 100:.0f}%
+    </div>
+</div>
+"""
         )
 
     st.progress(progress)
 
     st.caption(
-        f"{processed:,} of {total:,} observations processed • "
-        f"Model: {get_model_display_name(prediction['model_id'])} • "
-        f"Replay speed: {st.session_state.active_speed_label}"
+        f"{processed:,}/{total:,} observations processed"
+        f"  •  {prediction['timestamp']}"
+        f"  •  {get_model_display_name(prediction['model_id'])}"
+        f"  •  {st.session_state.active_speed_label}"
     )
 
     # ========================================================

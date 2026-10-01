@@ -19,6 +19,17 @@ st.set_page_config(
     page_title="Pump Predictive Maintenance",
     layout="wide",
 )
+st.markdown(
+    """
+    <style>
+    /* Keep live dashboard content fully visible during fragment reruns */
+    [data-stale="true"] {
+        opacity: 1 !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -1845,81 +1856,88 @@ physical damage.
         f"{prediction['timestamp']}"
     )
 
+    # ========================================================
+    # PREDICTED FAILURE RISK TREND
+    # ========================================================
 
-# ========================================================
-# PREDICTED FAILURE RISK TREND
-# ========================================================
+    st.subheader("Predicted Failure Risk Over Time")
 
-st.subheader("Predicted Failure Risk Over Time")
+    history = pd.DataFrame(session.history)
 
-history = pd.DataFrame(session.history)
+    if not history.empty:
 
-if not history.empty:
+        risk_history = history.copy().tail(150)
 
-    risk_history = history.copy().tail(150)
+        risk_history["timestamp"] = pd.to_datetime(
+            risk_history["timestamp"],
+            errors="coerce",
+        )
 
-    risk_history["timestamp"] = pd.to_datetime(
-        risk_history["timestamp"],
-        errors="coerce",
-    )
+        risk_history["Risk Score"] = (
+            risk_history["risk_score"]
+        )
 
-    risk_history["Risk Score"] = risk_history["risk_score"]
-
-    chart_data = (
-        risk_history[
-            [
-                "timestamp",
-                "Risk Score",
+        chart_data = (
+            risk_history[
+                [
+                    "timestamp",
+                    "Risk Score",
+                ]
             ]
-        ]
-        .dropna(subset=["timestamp"])
-        .set_index("timestamp")
-    )
-
-    st.line_chart(
-        chart_data,
-        width="stretch",
-        height=320,
-        y_label="Risk score",
-        x_label="Simulated sensor time",
-    )
-
-    latest_risk = float(
-        risk_history["risk_score"].iloc[-1]
-    )
-
-    if latest_risk >= 0.85:
-        risk_message = (
-            "Very high predicted failure risk. "
-            "The current score is in the ALERT range."
-        )
-    elif latest_risk >= 0.60:
-        risk_message = (
-            "High predicted failure risk. "
-            "The current score is in the WARNING range."
-        )
-    elif latest_risk >= 0.30:
-        risk_message = (
-            "Elevated predicted failure risk. "
-            "The current score is in the WATCH range."
-        )
-    else:
-        risk_message = (
-            "Low predicted failure risk. "
-            "The current score is in the NORMAL range."
+            .dropna(
+                subset=["timestamp"]
+            )
+            .set_index(
+                "timestamp"
+            )
         )
 
-    st.caption(
-        "This chart shows how the model's estimated failure risk "
-        f"changes over time for the selected "
-        f"{st.session_state.active_horizon_min}-minute prediction horizon. "
-        "Risk scores range from 0 to 1."
-    )
+        st.line_chart(
+            chart_data,
+            width="stretch",
+            height=320,
+            y_label="Risk score",
+            x_label="Simulated sensor time",
+        )
 
-    st.info(
-        f"Current interpretation: {risk_message}"
-    )
+        latest_risk = float(
+            risk_history["risk_score"].iloc[-1]
+        )
 
+        if latest_risk >= 0.85:
+            risk_message = (
+                "Very high predicted failure risk. "
+                "The current score is in the ALERT range."
+            )
+
+        elif latest_risk >= 0.60:
+            risk_message = (
+                "High predicted failure risk. "
+                "The current score is in the WARNING range."
+            )
+
+        elif latest_risk >= 0.30:
+            risk_message = (
+                "Elevated predicted failure risk. "
+                "The current score is in the WATCH range."
+            )
+
+        else:
+            risk_message = (
+                "Low predicted failure risk. "
+                "The current score is in the NORMAL range."
+            )
+
+        st.caption(
+            "This chart shows how the model's estimated "
+            "failure risk changes over time for the selected "
+            f"{st.session_state.active_horizon_min}-minute "
+            "prediction horizon. Risk scores range from 0 to 1."
+        )
+
+        st.info(
+            f"Current interpretation: {risk_message}"
+        )
 
     # ========================================================
     # CURRENT SENSOR READING

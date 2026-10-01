@@ -5,6 +5,8 @@ from datetime import datetime
 import time
 
 import pandas as pd
+
+import altair as alt
 import streamlit as st
 
 from core.state import SessionState
@@ -1916,6 +1918,7 @@ physical damage.
     )
 
     # ========================================================
+    # ========================================================
     # PREDICTED FAILURE RISK TREND
     # ========================================================
 
@@ -1932,32 +1935,118 @@ physical damage.
             errors="coerce",
         )
 
-        risk_history["Risk Score"] = (
-            risk_history["risk_score"]
+        risk_history = risk_history.dropna(
+            subset=["timestamp"]
         )
 
-        chart_data = (
-            risk_history[
-                [
-                    "timestamp",
-                    "Risk Score",
-                ]
-            ]
-            .dropna(
-                subset=["timestamp"]
+        # ----------------------------------------------------
+        # Risk trend
+        # ----------------------------------------------------
+
+        risk_line = (
+            alt.Chart(risk_history)
+            .mark_line(
+                strokeWidth=3
             )
-            .set_index(
-                "timestamp"
+            .encode(
+                x=alt.X(
+                    "timestamp:T",
+                    title="Simulated sensor time",
+                    axis=alt.Axis(
+                        format="%H:%M",
+                        labelAngle=0,
+                    ),
+                ),
+                y=alt.Y(
+                    "risk_score:Q",
+                    title="Model risk score",
+                    scale=alt.Scale(
+                        domain=[0, 1]
+                    ),
+                    axis=alt.Axis(
+                        format=".0%"
+                    ),
+                ),
+                tooltip=[
+                    alt.Tooltip(
+                        "timestamp:T",
+                        title="Time",
+                        format="%Y-%m-%d %H:%M:%S",
+                    ),
+                    alt.Tooltip(
+                        "risk_score:Q",
+                        title="Risk score",
+                        format=".1%",
+                    ),
+                ],
             )
         )
 
-        st.line_chart(
-            chart_data,
-            width="stretch",
-            height=320,
-            y_label="Risk score",
-            x_label="Simulated sensor time",
+        # ----------------------------------------------------
+        # Alert thresholds
+        # ----------------------------------------------------
+
+        threshold_data = pd.DataFrame(
+            {
+                "Alert Level": [
+                    "WATCH",
+                    "WARNING",
+                    "ALERT",
+                ],
+                "threshold": [
+                    0.30,
+                    0.60,
+                    0.85,
+                ],
+            }
         )
+
+        threshold_lines = (
+            alt.Chart(threshold_data)
+            .mark_rule(
+                strokeDash=[6, 4],
+                strokeWidth=2,
+            )
+            .encode(
+                y=alt.Y(
+                    "threshold:Q"
+                ),
+                color=alt.Color(
+                    "Alert Level:N",
+                    scale=alt.Scale(
+                        domain=[
+                            "WATCH",
+                            "WARNING",
+                            "ALERT",
+                        ],
+                        range=[
+                            "#f1c40f",
+                            "#e67e22",
+                            "#e74c3c",
+                        ],
+                    ),
+                    legend=alt.Legend(
+                        title="Alert thresholds"
+                    ),
+                ),
+            )
+        )
+
+        risk_chart = (
+            risk_line
+            + threshold_lines
+        ).properties(
+            height=350
+        )
+
+        st.altair_chart(
+            risk_chart,
+            use_container_width=True,
+        )
+
+        # ----------------------------------------------------
+        # Current interpretation
+        # ----------------------------------------------------
 
         latest_risk = float(
             risk_history["risk_score"].iloc[-1]
@@ -1965,33 +2054,32 @@ physical damage.
 
         if latest_risk >= 0.85:
             risk_message = (
-                "Very high predicted failure risk. "
+                "Very high model risk. "
                 "The current score is in the ALERT range."
             )
 
         elif latest_risk >= 0.60:
             risk_message = (
-                "High predicted failure risk. "
+                "High model risk. "
                 "The current score is in the WARNING range."
             )
 
         elif latest_risk >= 0.30:
             risk_message = (
-                "Elevated predicted failure risk. "
+                "Elevated model risk. "
                 "The current score is in the WATCH range."
             )
 
         else:
             risk_message = (
-                "Low predicted failure risk. "
+                "Low model risk. "
                 "The current score is in the NORMAL range."
             )
 
         st.caption(
-            "This chart shows how the model's estimated "
-            "failure risk changes over time for the selected "
-            f"{st.session_state.active_horizon_min}-minute "
-            "prediction horizon. Risk scores range from 0 to 1."
+            "Risk score is shown on a fixed 0–100% scale. "
+            "Dashboard alert thresholds are "
+            "WATCH 30% • WARNING 60% • ALERT 85%."
         )
 
         st.info(

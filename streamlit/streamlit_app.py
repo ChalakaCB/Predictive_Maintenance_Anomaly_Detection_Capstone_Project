@@ -19,17 +19,17 @@ st.set_page_config(
     page_title="Pump Predictive Maintenance",
     layout="wide",
 )
-st.markdown(
-    """
-    <style>
-    /* Keep live dashboard content fully visible during fragment reruns */
-    [data-stale="true"] {
-        opacity: 1 !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+# st.markdown(
+#     """
+#     <style>
+#     /* Keep live dashboard content fully visible during fragment reruns */
+#     [data-stale="true"] {
+#         opacity: 1 !important;
+#     }
+#     </style>
+#     """,
+#     unsafe_allow_html=True,
+# )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -1179,7 +1179,7 @@ if (
 # LIVE REPLAY FRAGMENT
 # ============================================================
 
-@st.fragment(run_every=0.1)
+@st.fragment(run_every=0.25)
 def replay_tick():
 
     # ========================================================
@@ -1715,116 +1715,175 @@ def replay_tick():
         )
 
 
-    # ========================================================
-    # LIVE STATUS
+       # ========================================================
+    # LIVE MONITORING OVERVIEW
     # ========================================================
 
-    status_col, alert_col = (
-        st.columns(
-            [2, 1]
-        )
+    alert_level = prediction["alert_level"]
+    current_risk = float(prediction["risk_score"])
+
+    status_styles = {
+        "NORMAL": {
+            "icon": "●",
+            "bg": "#ecfdf5",
+            "border": "#10b981",
+            "text": "#065f46",
+        },
+        "WATCH": {
+            "icon": "●",
+            "bg": "#fffbeb",
+            "border": "#f59e0b",
+            "text": "#92400e",
+        },
+        "WARNING": {
+            "icon": "●",
+            "bg": "#fff7ed",
+            "border": "#f97316",
+            "text": "#9a3412",
+        },
+        "ALERT": {
+            "icon": "●",
+            "bg": "#fef2f2",
+            "border": "#ef4444",
+            "text": "#991b1b",
+        },
+    }
+
+    status_style = status_styles.get(
+        alert_level,
+        {
+            "icon": "●",
+            "bg": "#f8fafc",
+            "border": "#94a3b8",
+            "text": "#334155",
+        },
     )
 
+    overview_col1, overview_col2, overview_col3, overview_col4 = st.columns(4)
 
-    with status_col:
-
-        st.subheader(
-            "Replay Status"
-        )
-
-        st.progress(
-            progress
-        )
-
-        st.caption(
-            f"{processed:,} / "
-            f"{total:,} observations processed"
-        )
-
-
-    with alert_col:
-
-        alert_level = (
-            prediction[
-                "alert_level"
-            ]
-        )
-
-        alert_color = (
-            ALERT_COLORS.get(
-                alert_level,
-                "#808080",
-            )
-        )
-
-        st.markdown(
+    with overview_col1:
+        st.html(
             f"""
             <div style="
-                padding: 18px;
-                border-radius: 10px;
-                text-align: center;
-                background-color: {alert_color};
-                color: white;
-                font-size: 26px;
-                font-weight: bold;
+                background:{status_style['bg']};
+                border:1px solid {status_style['border']};
+                border-radius:14px;
+                padding:18px;
+                min-height:120px;
             ">
-                {alert_level}
+                <div style="
+                    font-size:13px;
+                    color:#64748b;
+                    margin-bottom:10px;
+                ">
+                    Machine Status
+                </div>
+
+                <div style="
+                    font-size:28px;
+                    font-weight:700;
+                    color:{status_style['text']};
+                ">
+                    {status_style['icon']} {alert_level}
+                </div>
             </div>
-            """,
-            unsafe_allow_html=True,
+            """
         )
 
+    with overview_col2:
+        st.html(
+            f"""
+            <div style="
+                background:#f8fafc;
+                border:1px solid #dbeafe;
+                border-radius:14px;
+                padding:18px;
+                min-height:120px;
+            ">
+                <div style="
+                    font-size:13px;
+                    color:#64748b;
+                    margin-bottom:10px;
+                ">
+                    Failure Risk
+                </div>
 
-    # ========================================================
-    # CURRENT PREDICTION
-    # ========================================================
-
-    metric1, metric2, metric3, metric4 = (
-        st.columns(4)
-    )
-
-
-    metric1.metric(
-        "Risk Score",
-        f"{prediction['risk_score']:.3f}",
-    )
-
-
-    metric2.metric(
-        "Prediction Horizon",
-        f"{st.session_state.active_horizon_min} min",
-    )
-
-
-    metric3.metric(
-        "Model",
-        get_model_display_name(
-            prediction["model_id"]
-        ),
-    )
-
-
-    threshold = (
-        get_model_threshold(
-            prediction["model_id"]
-        )
-    )
-
-
-    if threshold is not None:
-
-        metric4.metric(
-            "Model Threshold",
-            f"{float(threshold):.3f}",
+                <div style="
+                    font-size:28px;
+                    font-weight:700;
+                    color:#1e3a8a;
+                ">
+                    {current_risk * 100:.1f}%
+                </div>
+            </div>
+            """
         )
 
-    else:
+    with overview_col3:
+        st.html(
+            f"""
+            <div style="
+                background:#f8fafc;
+                border:1px solid #e2e8f0;
+                border-radius:14px;
+                padding:18px;
+                min-height:120px;
+            ">
+                <div style="
+                    font-size:13px;
+                    color:#64748b;
+                    margin-bottom:10px;
+                ">
+                    Prediction Window
+                </div>
 
-        metric4.metric(
-            "Model Threshold",
-            "N/A",
+                <div style="
+                    font-size:28px;
+                    font-weight:700;
+                    color:#0f172a;
+                ">
+                    {st.session_state.active_horizon_min} min
+                </div>
+            </div>
+            """
         )
 
+    with overview_col4:
+        st.html(
+            f"""
+            <div style="
+                background:#f8fafc;
+                border:1px solid #e2e8f0;
+                border-radius:14px;
+                padding:18px;
+                min-height:120px;
+            ">
+                <div style="
+                    font-size:13px;
+                    color:#64748b;
+                    margin-bottom:10px;
+                ">
+                    Replay Progress
+                </div>
+
+                <div style="
+                    font-size:28px;
+                    font-weight:700;
+                    color:#0f172a;
+                ">
+                    {progress * 100:.0f}%
+                </div>
+            </div>
+            """
+        )
+
+    st.progress(progress)
+
+    st.caption(
+        f"{processed:,} of {total:,} observations processed • "
+        f"Model: {get_model_display_name(prediction['model_id'])} • "
+        f"Replay speed: {st.session_state.active_speed_label}"
+    )
 
     # ========================================================
     # RISK EXPLANATION

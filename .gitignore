@@ -21,9 +21,10 @@ htmlcov/
 .ipynb_checkpoints/
 
 # Local datasets and generated ETL outputs
-data/raw/
-data/processed/
-ETL_OUTPUT Dataset/
+/data/raw/*
+!/data/raw/.gitkeep
+/data/processed/*
+!/data/processed/.gitkeep
 *.zip
 *.parquet
 *.feather

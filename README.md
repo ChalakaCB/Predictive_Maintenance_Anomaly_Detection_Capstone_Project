@@ -26,7 +26,7 @@ Current sensor readings + 5/20/60-minute window statistics from the past hour �
 │   ├── preprocess.py
 │   ├── traditional_ml.py
 │   ├── dl.py
-│   └── models/                        # Generated locally; ignored by Git
+│   └── models/                        # 28 saved models included in Git
 │       ├── horizon_label_<N>min__<model>.joblib
 │       └── horizon_label_<N>min__<model>.pt
 ├── .gitignore
@@ -34,16 +34,21 @@ Current sensor readings + 5/20/60-minute window statistics from the past hour �
 └── README.md
 ```
 
-For per-target folders and models, N is 20, 30, 40 or 50. A fresh clone may not
-contain `data/` or `src/models/`: ignored files and empty directories are not
-distributed by Git. Create `data/raw/` manually and place the original CSV there;
-the scripts create the output directories automatically. Frontend/backend and
-Docker configuration will be added by the application team; they are not part
-of this branch yet.
+For per-target folders and models, N is 20, 30, 40 or 50. The repository includes
+28 trained models in `src/models/`: five traditional ML and two deep learning
+models for each horizon. They can be loaded without retraining.
 
-## How to run
+Datasets are not included in Git, so a fresh clone may not contain `data/`.
+Create `data/raw/` manually and place the original CSV there for preprocessing
+or historical replay. Processed CSVs are needed only for offline training;
+the preprocessing script creates their output directories automatically.
 
-Place the original dataset at `data/raw/MetroPT3(AirCompressor).csv`, then run the following commands from the repository root:
+## Optional retraining
+
+To regenerate the processed datasets and retrain the models, place the original
+dataset at `data/raw/MetroPT3(AirCompressor).csv`, then run the following commands
+from the repository root. Retraining is optional and overwrites the corresponding
+saved models and result CSVs.
 
 ```bash
 python -m pip install -r requirements.txt
@@ -58,23 +63,23 @@ python src/dl.py
 
 | Horizon | Model | Precision | Recall | F1 |
 | --- | --- | ---: | ---: | ---: |
-| 20min | lr | 0.8523 | 0.5435 | 0.6637 |
-| 20min | rf | 0.9640 | 0.9710 | 0.9675 |
+| 20min | Logistic Regression | 0.8523 | 0.5435 | 0.6637 |
+| 20min | Random Forest | 0.9640 | 0.9710 | 0.9675 |
 | 20min | extra_trees | 0.9708 | 0.9638 | 0.9673 |
 | 20min | gradient_boosting | 0.9054 | 0.9710 | 0.9371 |
 | 20min | xgboost | 0.9448 | 0.9928 | 0.9682 |
-| 30min | lr | 0.8519 | 0.4423 | 0.5823 |
-| 30min | rf | 0.9716 | 0.9856 | 0.9785 |
+| 30min | Logistic Regression | 0.8519 | 0.4423 | 0.5823 |
+| 30min | Random Forest | 0.9716 | 0.9856 | 0.9785 |
 | 30min | extra_trees | 0.9761 | 0.9808 | 0.9784 |
 | 30min | gradient_boosting | 0.9269 | 0.9760 | 0.9508 |
 | 30min | xgboost | 0.9488 | 0.9808 | 0.9645 |
-| 40min | lr | 0.7787 | 0.3417 | 0.4750 |
-| 40min | rf | 0.9891 | 0.9748 | 0.9819 |
+| 40min | Logistic Regression | 0.7787 | 0.3417 | 0.4750 |
+| 40min | Random Forest | 0.9891 | 0.9748 | 0.9819 |
 | 40min | extra_trees | 0.9928 | 0.9856 | 0.9892 |
 | 40min | gradient_boosting | 0.8675 | 0.9424 | 0.9034 |
 | 40min | xgboost | 0.9891 | 0.9820 | 0.9856 |
-| 50min | lr | 0.8252 | 0.3401 | 0.4816 |
-| 50min | rf | 0.9824 | 0.9654 | 0.9738 |
+| 50min | Logistic Regression | 0.8252 | 0.3401 | 0.4816 |
+| 50min | Random Forest | 0.9824 | 0.9654 | 0.9738 |
 | 50min | extra_trees | 0.9715 | 0.9827 | 0.9771 |
 | 50min | gradient_boosting | 0.9254 | 0.9654 | 0.9450 |
 | 50min | xgboost | 0.9741 | 0.9769 | 0.9755 |
@@ -88,6 +93,6 @@ python src/dl.py
 | 30min | Tabular ResNet | 0.8879 | 0.9519 | 0.9188 |
 | 30min | FT-Transformer | 0.9538 | 0.7933 | 0.8661 |
 | 40min | Tabular ResNet | 0.9531 | 0.8777 | 0.9139 |
-| 40min | FT-Transformer | 0.9224 | 0.7266 | 0.8129 |
+| 40min | FT-Transformer | 0.9484 | 0.8597 | 0.9019 |
 | 50min | Tabular ResNet | 0.9719 | 0.7983 | 0.8766 |
 | 50min | FT-Transformer | 0.8539 | 0.7579 | 0.8031 |

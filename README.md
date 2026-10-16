@@ -96,3 +96,12 @@ python src/dl.py
 | 40min | FT-Transformer | 0.9484 | 0.8597 | 0.9019 |
 | 50min | Tabular ResNet | 0.9719 | 0.7983 | 0.8766 |
 | 50min | FT-Transformer | 0.8539 | 0.7579 | 0.8031 |
+
+
+## Team and contributions
+
+- **Rahul Thirumala Prakash**: ETL and labelling pipeline (data cleaning, failure-window and adaptive anomaly labels, train/test split), `docs/MetroPT3_ETL.ipynb`. Committed to the repository by HaoChen on 15 September 2026.
+- **HaoChen**: preprocessing pipeline, traditional ML and deep learning modelling
+- **Ishan Basnet**: Streamlit dashboard
+- **Chalaka Nawarathna**: dashboard foundation and deep learning integration
+- **JD2472**: SMOTE-rebalanced splits

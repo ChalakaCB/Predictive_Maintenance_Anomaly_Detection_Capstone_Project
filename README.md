@@ -100,7 +100,7 @@ python src/dl.py
 
 ## Team and contributions
 
-- **Rahul Thirumala Prakash**: ETL and labelling pipeline (data cleaning, failure-window and adaptive anomaly labels, train/test split), `docs/MetroPT3_ETL.ipynb`. Committed to the repository by HaoChen on 15 September 2026.
+- **Rahul Thirumala Prakash**: ETL and labelling pipeline (data cleaning, failure-window and adaptive anomaly labels, train/test split), `docs/MetroPT3_ETL.ipynb`. Committed to the repository by Jackie Chen on 15 September 2026.
 - **Jackie Chen**: preprocessing pipeline, traditional ML and deep learning modelling
 - **Ishan Basnet**: Streamlit dashboard
 - **Chalaka Nawarathna**: dashboard foundation and deep learning integration
